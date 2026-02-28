@@ -1,13 +1,16 @@
 import {
   compareHash,
   ConflictException,
+  createLoginCredentials,
   generateHash,
   NotFoundException,
 } from "../../common/utils/index.js";
 import { UserModel, findOne, createOne } from "../../DB/index.js";
 import { hash, compare } from "bcrypt";
-import { SALT_ROUND } from "../../../config/config.service.js";
+import { SALT_ROUND, USER_ACCESS_TOKEN_SECRET_KEY, USER_REFRESH_TOKEN_SECRET_KEY } from "../../../config/config.service.js";
 import { HashApproachEnum } from "../../common/enums/security.enum.js";
+import { generateDecryption, generateEncryption } from "../../common/utils/security/encryption.security.js";
+import jwt from "jsonwebtoken";
 export const signup = async (inputs) => {
   const { username, email, password, phone } = inputs;
   const checkUserExist = await findOne({
@@ -26,12 +29,12 @@ export const signup = async (inputs) => {
         plaintext: password,
         approach: HashApproachEnum.ARGON2,
       }),
-      phone,
+      phone:await generateEncryption (phone),
     },
   });
   return { user };
 };
-export const login = async (inputs) => {
+export const login = async (inputs,issuer) => {
   const { email, password } = inputs;
   const user = await findOne({
     model: UserModel,
@@ -41,8 +44,10 @@ export const login = async (inputs) => {
   if (!user) {
     throw NotFoundException({ message: "Invalid email or password" });
   }
-  if (!(await compareHash({ plaintext: password, cipherText: user.password }))) {
+  if (!(await compareHash({ plaintext: password, cipherText: user.password, approach: HashApproachEnum.ARGON2 }))) {
     throw NotFoundException({ message: "Invalid email or password" });
   }
-  return user;
+  user.phone = await generateDecryption(user.phone);
+   return createLoginCredentials(user,issuer);
+
 };

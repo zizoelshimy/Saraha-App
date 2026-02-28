@@ -8,16 +8,16 @@ export const generateHash = async ({
   minor = "b",
   approach = HashApproachEnum.BCRYPT,
 } = {}) => {
-    let hashValue;
-    switch (approach) {
-      case HashApproachEnum.ARGON2:
-        hashValue = await argon2.hash(plaintext);
-        break;
-      default:
-        const generatedSalt = await genSalt(saltRounds, minor);
-        hashValue= await hash(plaintext, generatedSalt);
-        break;
-    }
+  let hashValue;
+  switch (approach) {
+    case HashApproachEnum.ARGON2:
+      hashValue = await argon2.hash(plaintext);
+      break;
+    default:
+      const generatedSalt = await genSalt(saltRounds, minor);
+      hashValue = await hash(plaintext, generatedSalt);
+      break;
+  }
   return hashValue;
 };
 export const compareHash = async ({
@@ -25,14 +25,14 @@ export const compareHash = async ({
   cipherText,
   approach = HashApproachEnum.BCRYPT,
 } = {}) => {
-    let match=false;
-    switch (approach) {
-      case HashApproachEnum.ARGON2:
-        match = await argon2.verify(cipherText, plaintext);
-        break;
-      default:
-        match= await compare(plaintext, cipherText);
-        break;
-    }
-  return hashValue;
+  let match = false;
+  switch (approach) {
+    case HashApproachEnum.ARGON2:
+      match = await argon2.verify(cipherText, plaintext);
+      break;
+    default:
+      match = await compare(plaintext, cipherText);
+      break;
+  }
+  return match;
 };
