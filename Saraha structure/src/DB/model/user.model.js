@@ -1,7 +1,7 @@
 export const users = [];
 import mongoose from "mongoose";
 import { GenderEnum, ProviderEnum } from "../../common/enums/index.js";
-
+import { RuleEnum } from "../../common/enums/user.enum.js";
 const userSchema = new mongoose.Schema(
   {
     firstName: {
@@ -51,6 +51,11 @@ const userSchema = new mongoose.Schema(
     },
     profilePicture: {
       type: String,
+    },
+    role:{
+      type:Number,
+      enum:Object.values(RuleEnum),
+      default:RuleEnum.User,
     },
     coverPicture: [String],
   },

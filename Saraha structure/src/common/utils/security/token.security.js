@@ -1,5 +1,9 @@
 import jwt, { decode } from "jsonwebtoken";
 import {
+  ACCESS_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_EXPIRES_IN,
+  SYSTEM_ACCESS_TOKEN_SECRET_KEY,
+  SYSTEM_REFRESH_TOKEN_SECRET_KEY,
   USER_ACCESS_TOKEN_SECRET_KEY,
   USER_REFRESH_TOKEN_SECRET_KEY,
 } from "../../../../config/config.service.js";
@@ -9,6 +13,7 @@ import {
   BadRequestException,
   ConflictException,
 } from "../response/error.response.js";
+import { RuleEnum } from "../../enums/user.enum.js";
 export const generateToken = ({
   payload = {},
   secretKey = USER_ACCESS_TOKEN_SECRET_KEY,
@@ -24,20 +29,40 @@ export const verifyToken = ({
 };
 
 export const getTokenSignature = async ({
-  tokenType = TokenTypeEnum.ACCESS,
+  tokenType = TokenTypeEnum.ACCESS, level
 } = {}) => {
+  const {accessSignuture,refreshSignature} =await detectSignatureLevel(level);
   let signuture = undefined;
   switch (tokenType) {
     case TokenTypeEnum.REFRESH:
-      signuture = USER_REFRESH_TOKEN_SECRET_KEY;
+      signuture = refreshSignature;
       break;
     case TokenTypeEnum.ACCESS:
-      signuture = USER_ACCESS_TOKEN_SECRET_KEY;
+      signuture = accessSignuture;
       break;
     default:
       throw BadRequestException({ message: "Invalid token type" });
   }
   return signuture;
+};
+
+export const detectSignatureLevel = async (level) => {
+  let signutures = {accessSignuture:undefined,refreshSignature:undefined};
+  switch (level) {
+    case RuleEnum.admin:
+      signutures={
+        accessSignuture:SYSTEM_ACCESS_TOKEN_SECRET_KEY,
+        refreshSignature:SYSTEM_REFRESH_TOKEN_SECRET_KEY
+      }
+      break;
+    default:
+      signutures={
+        accessSignuture:USER_ACCESS_TOKEN_SECRET_KEY,
+        refreshSignature:USER_REFRESH_TOKEN_SECRET_KEY
+      }
+      break;
+  }
+  return signutures;
 };
 
 export const decodeToken = async ({
@@ -49,7 +74,7 @@ export const decodeToken = async ({
   if (!decodedToken?.aud?.length) {
     throw BadRequestException({ message: "Missing audience in token" });
   }
-  const [tokenApproach] = decodedToken.aud || [];
+  const [tokenApproach,level] = decodedToken.aud || [];
   if (tokenApproach !== tokenType) {
     throw ConflictException({
       message:
@@ -60,7 +85,7 @@ export const decodeToken = async ({
     });
   }
 
-  const secret = await getTokenSignature({ tokenType: tokenApproach });
+  const secret = await getTokenSignature({ tokenType: tokenApproach,level });
   const verifiedData = jwt.verify(token, secret);
   console.log(verifiedData);
   const user = await findOne({
@@ -74,22 +99,23 @@ export const decodeToken = async ({
 };
 
 export const createLoginCredentials = async (user, issuer) => {
+  const {accessSignuture,refreshSignature} =await detectSignatureLevel(user.role);
   const access_token = generateToken({
     payload: { userId: user._id }, //payload
-    secretKey: USER_ACCESS_TOKEN_SECRET_KEY, //secret key
+    secretKey: accessSignuture, //secret key
     options: {
-      expiresIn: 1800,
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
       issuer: issuer, // to specify the issuer of the token, which can be used for validation and verification purposes when the token is received by the server in subsequent requests
-      audience: [TokenTypeEnum.ACCESS], // to specify the audience of the token, which can be used to restrict the token's usage to a specific user or group of users
+      audience: [TokenTypeEnum.ACCESS,user.role], // to specify the audience of the token, which can be used to restrict the token's usage to a specific user or group of users
     },
   });
   const refresh_token = generateToken({
     payload: { userId: user._id }, //payload
-    secretKey: USER_REFRESH_TOKEN_SECRET_KEY, //secret key
+    secretKey: refreshSignature, //secret key
     options: {
-      expiresIn: 60 * 60 * 24 * 365,
+      expiresIn: REFRESH_TOKEN_EXPIRES_IN,
       issuer: issuer, // to specify the issuer of the token, which can be used for validation and verification purposes when the token is received by the server in subsequent requests
-      audience: [TokenTypeEnum.REFRESH], // to specify the audience of the token, which can be used to restrict the token's usage to a specific user or group of users
+      audience: [TokenTypeEnum.REFRESH,user.role], // to specify the audience of the token, which can be used to restrict the token's usage to a specific user or group of users
     },
   });
   return { access_token, refresh_token };
