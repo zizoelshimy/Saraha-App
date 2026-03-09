@@ -11,18 +11,14 @@ import {
   decodeToken,
 } from "../../common/utils/security/token.security.js";
 import { TokenTypeEnum } from "../../common/enums/security.enum.js";
-export const profile = async (token) => {
-  const account = await decodeToken({ token, tokenType: TokenTypeEnum.ACCESS });
-  return account;
+export const profile = async (user) => {
+  return user;
 };
 export const rotateToken = async (token, issuer) => {
-  const account = await decodeToken({
-    token,
-    tokenType: TokenTypeEnum.REFRESH,
-  });
 
-  if (!account) {
+
+  if (!token) {
     throw NotFoundException({ message: "not registered account" });
   }
-  return createLoginCredentials(account, issuer);
+  return createLoginCredentials(token, issuer);
 };

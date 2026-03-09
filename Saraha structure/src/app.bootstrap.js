@@ -3,10 +3,11 @@ import { authRouter, userRouter } from "./modules/index.js";
 import { authenticateDB } from "./DB/index.js";
 import express from "express";
 import { globalErrorHandling } from "./common/utils/index.js";
-
+import cors from "cors"; 
 async function bootstrap() {
   const app = express();
   //convert buffer data
+  app.use(cors());
   app.use(express.json());
   //DB
   await authenticateDB();

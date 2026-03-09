@@ -28,7 +28,9 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function(){
+        return this.provider === ProviderEnum.System
+      },
     },
     phone: {
       type: String,
@@ -58,6 +60,10 @@ const userSchema = new mongoose.Schema(
       default:RuleEnum.User,
     },
     coverPicture: [String],
+    confirmEmail: Date,
+    changeCredentialsTime: Date,
+    profilePicture: String,
+    address: String,
   },
   {
     collection: "Route_Users",
