@@ -1,5 +1,6 @@
 import { findOne } from "../../DB/database.repository.js";
 import { UserModel, users } from "../../DB/model/index.js";
+import { generateDecryption } from "../../common/utils/index.js";
 import jwt from "jsonwebtoken";
 import {
   USER_ACCESS_TOKEN_SECRET_KEY,
@@ -22,3 +23,14 @@ export const rotateToken = async (token, issuer) => {
   }
   return createLoginCredentials(token, issuer);
 };
+export const shareProfile = async (userId) => {
+  // Implementation for sharing profile
+  const account = await findOne({model:UserModel, filter:{ _id: userId }, select:"-password "});
+  if (!account) {
+    throw NotFoundException({ message: "invalid share profile account" });
+  }
+  if(account.phone){
+    account.generateDecryption = generateDecryption(account.phone);
+  }
+  return account;  
+}

@@ -3,7 +3,7 @@ import { authRouter, userRouter } from "./modules/index.js";
 import { authenticateDB } from "./DB/index.js";
 import express from "express";
 import { globalErrorHandling } from "./common/utils/index.js";
-import cors from "cors"; 
+import cors from "cors";
 async function bootstrap() {
   const app = express();
   //convert buffer data
@@ -14,6 +14,7 @@ async function bootstrap() {
   //application routing
   app.get("/", (req, res) => res.send("Hello World!"));
   app.use("/auth", authRouter);
+  app.use("/user", authRouter);
   app.use("/user", userRouter);
 
   //invalid routing

@@ -34,6 +34,7 @@ export const globalErrorHandling = (error, req, res, next) => {
     return res.status(status).json({
         status,
         stack: mood ? undefined : error.stack,
-        errorMessage: mood ? status == 500 ? defaultErrorMessage : displayErrorMessage : displayErrorMessage
+        errorMessage: mood ? status == 500 ? defaultErrorMessage : displayErrorMessage : displayErrorMessage,
+        extra: error.cause?.extra || undefined
     })
 }
