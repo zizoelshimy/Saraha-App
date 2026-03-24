@@ -14,6 +14,7 @@ import * as validators from "./user.validation.js";
 import { validation } from "../../middleware/validation.middleware.js";
 import { localFileUpload } from "../../common/utils/multer/index.js";
 import { profileImage } from "./user.service.js";
+import { fileFieldValidation } from "../../common/utils/multer/index.js";
 router.get(
   "/",
   authentication(),
@@ -58,7 +59,7 @@ router.get(
 router.patch(
   "/profile-image",
   authentication(),
-  localFileUpload({customPath:'users/profile-images'}).single("attachment"),
+  localFileUpload({customPath:'users/profile-images', validation: fileFieldValidation.image}).single("attachment"),
   async (req, res, next) => {
     const profileImagePath = await profileImage(req.file, req.user);
     return successResponse({

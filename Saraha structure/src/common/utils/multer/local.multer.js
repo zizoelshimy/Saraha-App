@@ -3,12 +3,12 @@ import { mkdirSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-
+import { fileFilter } from "./validation.multer.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const BASE_UPLOADS_DIR = resolve(__dirname, "../../../../../../uploads");
 
-export const localFileUpload = ({ customPath = "general" } = {}) => {
+export const localFileUpload = ({ customPath = "general",validation=[] } = {}) => {
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       const fullPath = customPath
@@ -25,5 +25,5 @@ export const localFileUpload = ({ customPath = "general" } = {}) => {
       cb(null, uniqueFileName);
     },
   });
-  return multer({ storage: storage });
+  return multer({fileFilter: fileFilter(validation), storage: storage });
 };
