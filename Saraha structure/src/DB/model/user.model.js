@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema(
       enum:Object.values(RuleEnum),
       default:RuleEnum.User,
     },
-    coverPicture: [String],
+    coverProfilePictures: [String],
     confirmEmail: Date,
     changeCredentialsTime: Date,
     profilePicture: String,

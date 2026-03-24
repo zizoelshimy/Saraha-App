@@ -1,3 +1,4 @@
+import multer from "multer";
 import { NODE_ENV } from "../../../../config/config.service.js";
 
 export const ErrorResponse = ({ message = "Error", status = 400, extra = undefined } = {}) => {
@@ -31,6 +32,9 @@ export const globalErrorHandling = (error, req, res, next) => {
     const mood = NODE_ENV == "production";
     const defaultErrorMessage = "something went wrong Sever error";
     const displayErrorMessage = error.message || defaultErrorMessage;
+    if(error instanceof multer.MulterError){
+        status = 400;
+    }
     return res.status(status).json({
         status,
         stack: mood ? undefined : error.stack,

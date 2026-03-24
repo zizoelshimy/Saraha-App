@@ -15,6 +15,7 @@ import { validation } from "../../middleware/validation.middleware.js";
 import { localFileUpload } from "../../common/utils/multer/index.js";
 import { profileImage } from "./user.service.js";
 import { fileFieldValidation } from "../../common/utils/multer/index.js";
+import { profileCoverImage } from "./user.service.js";
 router.get(
   "/",
   authentication(),
@@ -55,13 +56,30 @@ router.get(
     });
   },
 );
-
+//multer file upload for profile image
 router.patch(
   "/profile-image",
   authentication(),
-  localFileUpload({customPath:'users/profile-images', validation: fileFieldValidation.image}).single("attachment"),
+  localFileUpload({customPath:'users/profile-images', validation: fileFieldValidation.video, maxSize: 5 }).single("attachment"),
   async (req, res, next) => {
     const profileImagePath = await profileImage(req.file, req.user);
+    return successResponse({
+      res,
+      data: { profileImagePath },
+    });
+  },
+);
+
+router.patch(
+  "/profile-cover-image",
+  authentication(),
+  localFileUpload({customPath:'users/profile-images', validation: fileFieldValidation.image, maxSize: 5 }).fields([
+      { name: "profileImage", maxCount: 1 },
+      { name: "coverImages", maxCount: 2 },
+      
+  ]),
+  async (req, res, next) => {
+   const profileImagePath = await profileCoverImage(req.files, req.user);
     return successResponse({
       res,
       data: { profileImagePath },

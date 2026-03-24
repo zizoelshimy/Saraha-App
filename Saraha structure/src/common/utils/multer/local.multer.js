@@ -8,7 +8,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const BASE_UPLOADS_DIR = resolve(__dirname, "../../../../../../uploads");
 
-export const localFileUpload = ({ customPath = "general",validation=[] } = {}) => {
+export const localFileUpload = ({
+   customPath = "general",
+   validation=[],
+   maxSize=5 } = {}) => {
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       const fullPath = customPath
@@ -25,5 +28,5 @@ export const localFileUpload = ({ customPath = "general",validation=[] } = {}) =
       cb(null, uniqueFileName);
     },
   });
-  return multer({fileFilter: fileFilter(validation), storage: storage });
+  return multer({fileFilter: fileFilter(validation), storage: storage ,limits:{fileSize:maxSize*1024*1024}});
 };

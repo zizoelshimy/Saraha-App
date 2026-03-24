@@ -1,4 +1,4 @@
-import { findOne } from "../../DB/database.repository.js";
+import { findByIdAndUpdate, findOne } from "../../DB/database.repository.js";
 import { UserModel, users } from "../../DB/model/index.js";
 import { generateDecryption } from "../../common/utils/index.js";
 import jwt from "jsonwebtoken";
@@ -16,28 +16,43 @@ export const profile = async (user) => {
   return user;
 };
 export const rotateToken = async (token, issuer) => {
-
-
   if (!token) {
     throw NotFoundException({ message: "not registered account" });
   }
   return createLoginCredentials(token, issuer);
 };
-export const profileImage=async(file,user)=>{
-  user.profileImage=file.finalPath;
-  await user.save();
-  return user.profileImage;
+export const profileImage = async (file, user) => {
+  const imagePath = file.finalPath;
+  await findByIdAndUpdate({
+    id: user._id,
+    model: UserModel,
+    update: { profilePicture: imagePath },
+  });
+  return imagePath;
+};
 
-}
+export const profileCoverImage = async (files, user) => {
+  const coverPaths = files.map((file) => file.finalPath);
+  await findByIdAndUpdate({
+    id: user._id,
+    model: UserModel,
+    update: { coverProfilePictures: coverPaths },
+  });
+  return coverPaths;
+};
 
 export const shareProfile = async (userId) => {
   // Implementation for sharing profile
-  const account = await findOne({model:UserModel, filter:{ _id: userId }, select:"-password "});
+  const account = await findOne({
+    model: UserModel,
+    filter: { _id: userId },
+    select: "-password ",
+  });
   if (!account) {
     throw NotFoundException({ message: "invalid share profile account" });
   }
-  if(account.phone){
+  if (account.phone) {
     account.generateDecryption = generateDecryption(account.phone);
   }
-  return account;  
-}
+  return account;
+};
