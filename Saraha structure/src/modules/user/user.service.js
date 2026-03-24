@@ -23,6 +23,13 @@ export const rotateToken = async (token, issuer) => {
   }
   return createLoginCredentials(token, issuer);
 };
+export const profileImage=async(file,user)=>{
+  user.profileImage=file.finalPath;
+  await user.save();
+  return user.profileImage;
+
+}
+
 export const shareProfile = async (userId) => {
   // Implementation for sharing profile
   const account = await findOne({model:UserModel, filter:{ _id: userId }, select:"-password "});
