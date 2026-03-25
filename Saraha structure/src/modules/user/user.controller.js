@@ -61,6 +61,7 @@ router.patch(
   "/profile-image",
   authentication(),
   localFileUpload({customPath:'users/profile-images', validation: fileFieldValidation.video, maxSize: 5 }).single("attachment"),
+  validation(validators.profileImage),
   async (req, res, next) => {
     const profileImagePath = await profileImage(req.file, req.user);
     return successResponse({
@@ -73,10 +74,10 @@ router.patch(
 router.patch(
   "/profile-cover-image",
   authentication(),
+  validation(validators.profileCoverImage),
   localFileUpload({customPath:'users/profile-images', validation: fileFieldValidation.image, maxSize: 5 }).fields([
       { name: "profileImage", maxCount: 1 },
       { name: "coverImages", maxCount: 2 },
-      
   ]),
   async (req, res, next) => {
    const profileImagePath = await profileCoverImage(req.files, req.user);

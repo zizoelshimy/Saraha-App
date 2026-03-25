@@ -17,6 +17,8 @@ export const generalValidationFields = {
     id:joi.object().keys({
             userId: joi.string().custom((value,helper) => {
                return Types.ObjectId.isValid(value) ? value : helper.message("invalid object id")
-            })
-        })
+            }),
+           
+        }),
+   
 }
