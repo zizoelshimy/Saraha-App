@@ -36,3 +36,4 @@ export const REFRESH_TOKEN_EXPIRES_IN = parseInt(
 );
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+export const REDIS_URI = process.env.REDIS_URI;

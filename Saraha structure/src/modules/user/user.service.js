@@ -1,8 +1,13 @@
-import { findByIdAndUpdate, findOne } from "../../DB/database.repository.js";
-import { UserModel, users } from "../../DB/model/index.js";
-import { generateDecryption } from "../../common/utils/index.js";
+import {
+  createOne,
+  findByIdAndUpdate,
+  findOne,
+} from "../../DB/database.repository.js";
+import { tokenModel, UserModel, users } from "../../DB/model/index.js";
+import { ConflictException, generateDecryption } from "../../common/utils/index.js";
 import jwt from "jsonwebtoken";
 import {
+  REFRESH_TOKEN_EXPIRES_IN,
   USER_ACCESS_TOKEN_SECRET_KEY,
   USER_REFRESH_TOKEN_SECRET_KEY,
 } from "../../../config/config.service.js";
@@ -11,14 +16,25 @@ import {
   createLoginCredentials,
   decodeToken,
 } from "../../common/utils/security/token.security.js";
-import { TokenTypeEnum } from "../../common/enums/security.enum.js";
+import { LogOutEnum, TokenTypeEnum } from "../../common/enums/security.enum.js";
 export const profile = async (user) => {
   return user;
 };
-export const rotateToken = async (token, issuer) => {
+export const rotateToken = async (token,{jti, iat}, issuer) => {
   if (!token) {
     throw NotFoundException({ message: "not registered account" });
   }
+  if((iat+REFRESH_TOKEN_EXPIRES_IN)*1000>= Date.now()+(5*60*1000)){
+    throw ConflictException({ message: "current token is still valid" });
+  }
+  await createOne({
+        model: tokenModel,
+        data: {
+          userId: user._id,
+          jti,
+          expiresIn: new Date((iat + REFRESH_TOKEN_EXPIRES_IN) * 1000),
+        },
+      });
   return createLoginCredentials(token, issuer);
 };
 export const profileImage = async (file, user) => {
@@ -55,4 +71,38 @@ export const shareProfile = async (userId) => {
     account.generateDecryption = generateDecryption(account.phone);
   }
   return account;
+};
+
+
+//logout 
+
+export const logout = async ({ flag }, user, { jti, iat }) => {
+  if (!user) {
+    throw NotFoundException({ message: "invalid logout request" });
+  }
+
+  if (!jti || !iat) {
+    throw NotFoundException({ message: "missing token metadata for logout" });
+  }
+
+  let status = 200;
+  switch (flag) {
+    case LogOutEnum.All:
+      user.changeCredentialsTime = new Date();
+      await user.save();
+      await tokenModel.deleteMany({model: tokenModel,filter: { userId: user._id } });
+      break;
+    default:
+      await createOne({
+        model: tokenModel,
+        data: {
+          userId: user._id,
+          jti,
+          expiresIn: new Date((iat + REFRESH_TOKEN_EXPIRES_IN) * 1000),
+        },
+      });
+      status = 201;
+      break;
+  }
+  return status;
 };

@@ -1,4 +1,6 @@
 import jwt, { decode } from "jsonwebtoken";
+import { NotFoundException, UnauthorizedException } from "../response/error.response.js";
+import { tokenModel } from "../../../DB/model/index.js";
 import {
   ACCESS_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_EXPIRES_IN,
@@ -14,6 +16,7 @@ import {
   ConflictException,
 } from "../response/error.response.js";
 import { RuleEnum } from "../../enums/user.enum.js";
+import { randomUUID } from 'node:crypto';
 export const generateToken = ({
   payload = {},
   secretKey = USER_ACCESS_TOKEN_SECRET_KEY,
@@ -84,7 +87,9 @@ export const decodeToken = async ({
         tokenApproach,
     });
   }
-
+  if (decodeToken.jti&& await findOne({ model: tokenModel, filter: { jti: decodeToken.jti } })) {
+    throw UnauthorizedException({ message: "Invalid login session" });
+  }
   const secret = await getTokenSignature({ tokenType: tokenApproach,level });
   const verifiedData = jwt.verify(token, secret);
   console.log(verifiedData);
@@ -95,11 +100,16 @@ export const decodeToken = async ({
   if (!user) {
     throw NotFoundException({ message: "not registered account" });
   }
-  return user;
+  console.log({changeCredentialsTime: user.changeCredentialsTime?.getTime(), iat: decodedToken.iat * 1000});
+  if (user.changeCredentialsTime&&user.changeCredentialsTime?.getTime() >= decodedToken.iat * 1000) {
+    throw UnauthorizedException({ message: "Invalid login session " });
+  }
+  return {user,decodedToken};
 };
 
 export const createLoginCredentials = async (user, issuer) => {
   const {accessSignuture,refreshSignature} =await detectSignatureLevel(user.role);
+  const jwtid= randomUUID()
   const access_token = generateToken({
     payload: { userId: user._id }, //payload
     secretKey: accessSignuture, //secret key
@@ -107,6 +117,7 @@ export const createLoginCredentials = async (user, issuer) => {
       expiresIn: ACCESS_TOKEN_EXPIRES_IN,
       issuer: issuer, // to specify the issuer of the token, which can be used for validation and verification purposes when the token is received by the server in subsequent requests
       audience: [TokenTypeEnum.ACCESS,user.role], // to specify the audience of the token, which can be used to restrict the token's usage to a specific user or group of users
+      jwtid
     },
   });
   const refresh_token = generateToken({
@@ -116,6 +127,7 @@ export const createLoginCredentials = async (user, issuer) => {
       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
       issuer: issuer, // to specify the issuer of the token, which can be used for validation and verification purposes when the token is received by the server in subsequent requests
       audience: [TokenTypeEnum.REFRESH,user.role], // to specify the audience of the token, which can be used to restrict the token's usage to a specific user or group of users
+      jwtid
     },
   });
   return { access_token, refresh_token };

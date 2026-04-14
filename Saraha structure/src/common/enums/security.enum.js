@@ -6,3 +6,7 @@ export const TokenTypeEnum = {
   ACCESS:0,
   REFRESH:1,
 }
+export const LogOutEnum ={
+  All:0,
+  only:1
+}

@@ -3,7 +3,9 @@ import { authRouter, userRouter } from "./modules/index.js";
 import { authenticateDB } from "./DB/index.js";
 import express from "express";
 import { globalErrorHandling } from "./common/utils/index.js";
+import { connectRedis, redisCLIENT } from "./DB/redis.connection.db.js";
 import cors from "cors";
+import { set } from "./common/services/redis.service.js";
 async function bootstrap() {
   const app = express();
   //convert buffer data
@@ -11,6 +13,12 @@ async function bootstrap() {
   app.use(express.json());
   //DB
   await authenticateDB();
+  await connectRedis();
+  await set ({
+    key:"test",
+    value:"test",
+    ttl:60
+  })
   //application routing
   app.get("/", (req, res) => res.send("Hello World!"));
   app.use("/auth", authRouter);
