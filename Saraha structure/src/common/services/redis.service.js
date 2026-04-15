@@ -92,3 +92,11 @@ export const keys=   async (prefix)=>{
         logger.error(`field in Redis keys  operations ${error}`);
     }
 }
+
+export const revokeTokenKey=  ({userId, jti})=>{
+return `${baseRevokeTokenKey({userId})}:${jti}`
+}
+
+export const baseRevokeTokenKey=  ({userId})=>{
+return `RevokedToken:${userId}`
+}

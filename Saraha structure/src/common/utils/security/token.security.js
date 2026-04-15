@@ -17,6 +17,7 @@ import {
 } from "../response/error.response.js";
 import { RuleEnum } from "../../enums/user.enum.js";
 import { randomUUID } from 'node:crypto';
+import { get, revokeTokenKey } from "../../services/redis.service.js";
 export const generateToken = ({
   payload = {},
   secretKey = USER_ACCESS_TOKEN_SECRET_KEY,
@@ -87,7 +88,7 @@ export const decodeToken = async ({
         tokenApproach,
     });
   }
-  if (decodeToken.jti&& await findOne({ model: tokenModel, filter: { jti: decodeToken.jti } })) {
+  if (decodeToken.jti&& await get(revokeTokenKey ({userId: decodedToken.sub, jti: decodeToken.jti}))) {
     throw UnauthorizedException({ message: "Invalid login session" });
   }
   const secret = await getTokenSignature({ tokenType: tokenApproach,level });

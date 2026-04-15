@@ -17,6 +17,7 @@ import { profileImage } from "./user.service.js";
 import { fileFieldValidation } from "../../common/utils/multer/index.js";
 import { profileCoverImage } from "./user.service.js";
 import { logout } from "./user.service.js";
+
 router.get(
   "/",
   authentication(),
