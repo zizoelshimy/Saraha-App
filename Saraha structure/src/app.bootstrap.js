@@ -14,7 +14,7 @@ async function bootstrap() {
   //DB
   await authenticateDB();
   await connectRedis();
-  try {
+  /* try {
     await sendEmail({
       to: "zizoelshimy8@gmail.com",
       cc: ["ahmedelshimy92@gmail.com", "fateneldawey96@gmail.com"],
@@ -110,7 +110,7 @@ async function bootstrap() {
     } else {
       throw error;
     }
-  }
+  } */
   //application routing
   app.get("/", (req, res) => res.send("Hello World!"));
   app.use("/auth", authRouter);

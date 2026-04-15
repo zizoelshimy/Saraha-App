@@ -25,7 +25,15 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
 import { ProviderEnum } from "../../common/enums/user.enum.js";
-import { otpKey, set, get } from "../../common/services/redis.service.js";
+import {
+  otpKey,
+  set,
+  get,
+  ttl,
+  incr,
+  maxAttemptsOtpKey,
+  blockOtpKey,
+} from "../../common/services/redis.service.js";
 
 export const signup = async (inputs) => {
   const { username, email, password, phone } = inputs;
@@ -70,12 +78,14 @@ export const confirmEmail = async (inputs) => {
     model: UserModel,
     filter: {
       email,
-      confirmEmail: { $exists: false },
+      $or: [{ confirmEmail: { $exists: false } }, { confirmEmail: null }],
       provider: ProviderEnum.System,
     },
   });
   if (!account) {
-    return NotFoundException({ message: "fail to find matching account" });
+    return NotFoundException({
+      message: "Account not found or already confirmed",
+    });
   }
   const hashOtp = await get(otpKey(email));
   if (!hashOtp) {
@@ -92,6 +102,60 @@ export const confirmEmail = async (inputs) => {
   account.confirmEmail = new Date();
   await account.save();
   return account;
+};
+
+//resend confirm email we make this bec if we sign up and the otp is expired we can resend the otp without signing up again
+export const resendConfirmEmail = async (inputs) => {
+  const { email } = inputs;
+  const account = await findOne({
+    model: UserModel,
+    filter: {
+      email,
+      $or: [{ confirmEmail: { $exists: false } }, { confirmEmail: null }],
+      provider: ProviderEnum.System,
+    },
+  });
+  if (!account) {
+    return NotFoundException({
+      message: "Account not found or already confirmed",
+    });
+  }
+  const isBlocked = await ttl(blockOtpKey(email));
+  if (isBlocked > 0) {
+    return BadRequestException({
+      message: `Sorry, you have been blocked from requesting new OTPs.while you are blocked. Please try again after ${isBlocked} seconds`,
+    });
+  }
+
+  const remainingOtpTTL = await ttl(otpKey(email));
+  if (remainingOtpTTL > 0) {
+    return BadRequestException({
+      message: `Sorry, you cannot request a new OTP while the current OTP is still valid. Please try again after ${remainingOtpTTL} seconds`,
+    });
+  }
+  // Check the number of resend attempts and block if it exceeds the limit
+  const maxtrial = Number((await get(maxAttemptsOtpKey(email))) || 0);
+  if (maxtrial >= 3) {
+    await set({ key: blockOtpKey(email), value: 1, ttl: 7 * 60 });
+    return BadRequestException({
+      message: `Sorry, you have exceeded the maximum number of OTP resend attempts. Please try again after 7 minutes`,
+    });
+  }
+  const code = await createNumberOtp();
+  await set({
+    key: otpKey(email),
+    value: await generateHash({
+      plaintext: `${code}`,
+    }),
+    ttl: 120,
+  });
+  await sendEmail({
+    to: email,
+    subject: "Confirmation Email",
+    html: emailTemplate({ code, title: "Verify Email" }),
+  });
+  await incr(maxAttemptsOtpKey(email));
+  return;
 };
 
 export const login = async (inputs, issuer) => {

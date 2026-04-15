@@ -25,5 +25,12 @@ export const confirmEmail = {
       otp: generalValidationFields.otp.required(),
     }).required(),
 };
-    
+
+export const resendConfirmEmail = {
+  body:joi.object().keys({
+      //to inherit the email and password validation from login
+      email: generalValidationFields.email.required(),
+    }).required(),
+};
+
   

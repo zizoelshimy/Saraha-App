@@ -66,7 +66,13 @@ export const exists=   async (key)=>{
         logger.error(`field in Redis exists   operations ${error}`);
     }
 }
-
+export const incr=   async (key)=>{
+    try {
+        return await redisCLIENT.incr(key);
+    }   catch (error) {
+        logger.error(`field in Redis incr   operations ${error}`);
+    }
+}
 export const expire=   async ({key, ttl}={})=>{
     try {
         return await redisCLIENT.expire(key, ttl);
@@ -101,6 +107,13 @@ export const baseRevokeTokenKey=  ({userId})=>{
 return `RevokedToken:${userId}`
 }
 
-export const otpKey=  (email)=>{
-return `OTP::User::${email}`
-}
+export const otpKey=  (email,subject="Confirm_Email")=>{
+return `OTP::User::${email}::${subject}`
+} 
+
+export const maxAttemptsOtpKey=  (email,subject="Confirm_Email")=>{
+return `OTP::User::${email}::${subject}::MaxATrial`
+} 
+export const blockOtpKey=  (email,subject="Confirm_Email")=>{
+return `OTP::User::${email}::${subject}::Block`
+} 

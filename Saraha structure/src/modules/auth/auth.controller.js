@@ -4,7 +4,7 @@ import { successResponse } from "../../common/utils/index.js";
 const router = Router();
 import * as validators from "./auth.validation.js";
 import { validation } from "../../middleware/validation.middleware.js";
-import { confirmEmail } from "./auth.service.js";
+import { confirmEmail, resendConfirmEmail } from "./auth.service.js";
 router.post(
   "/signup",
   validation(validators.signup),
@@ -56,6 +56,20 @@ router.patch(
       res,
       status: 201,
       message: "Email confirmed successfully",
+      data: user,
+    });
+  },
+);
+
+router.patch(
+  "/resend-confirm-email",
+  validation(validators.resendConfirmEmail),
+  async (req, res, next) => {
+    const user = await resendConfirmEmail(req.body);
+    return successResponse({
+      res,
+      status: 201,
+      message: "OTP resent successfully",
       data: user,
     });
   },
