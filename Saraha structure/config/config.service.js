@@ -37,3 +37,9 @@ export const REFRESH_TOKEN_EXPIRES_IN = parseInt(
 
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const REDIS_URI = process.env.REDIS_URI;
+
+export const EMAIL_APP_PASSWORD = process.env.EMAIL_APP_PASSWORD;
+export const EMAIL_APP = process.env.EMAIL_APP;
+export const APPLICATION_NAME = process.env.APPLICATION_NAME;
+export const EMAIL_ALLOW_INVALID_CERT =
+  process.env.EMAIL_ALLOW_INVALID_CERT === "true";
