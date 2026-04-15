@@ -100,3 +100,7 @@ return `${baseRevokeTokenKey({userId})}:${jti}`
 export const baseRevokeTokenKey=  ({userId})=>{
 return `RevokedToken:${userId}`
 }
+
+export const otpKey=  (email)=>{
+return `OTP::User::${email}`
+}

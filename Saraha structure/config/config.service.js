@@ -43,3 +43,7 @@ export const EMAIL_APP = process.env.EMAIL_APP;
 export const APPLICATION_NAME = process.env.APPLICATION_NAME;
 export const EMAIL_ALLOW_INVALID_CERT =
   process.env.EMAIL_ALLOW_INVALID_CERT === "true";
+
+  export const FACEBOOK_LINK = process.env.FACEBOOK_LINK;
+  export const TWITTER_LINK = process.env.TWITTER_LINK;
+  export const INSTRGRAM_LINK = process.env.INSTRGRAM_LINK;

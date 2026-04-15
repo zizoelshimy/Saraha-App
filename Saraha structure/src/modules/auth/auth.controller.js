@@ -4,7 +4,7 @@ import { successResponse } from "../../common/utils/index.js";
 const router = Router();
 import * as validators from "./auth.validation.js";
 import { validation } from "../../middleware/validation.middleware.js";
-
+import { confirmEmail } from "./auth.service.js";
 router.post(
   "/signup",
   validation(validators.signup),
@@ -46,4 +46,19 @@ router.post("/signup/gmail", async (req, res, next) => {
     next(error);
   }
 });
+
+router.patch(
+  "/confirm-email",
+  validation(validators.confirmEmail),
+  async (req, res, next) => {
+    const user = await confirmEmail(req.body);
+    return successResponse({
+      res,
+      status: 201,
+      message: "Email confirmed successfully",
+      data: user,
+    });
+  },
+);
+
 export default router;

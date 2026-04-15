@@ -3,8 +3,11 @@ import {
   compareHash,
   ConflictException,
   createLoginCredentials,
+  createNumberOtp,
+  emailTemplate,
   generateHash,
   NotFoundException,
+  sendEmail,
 } from "../../common/utils/index.js";
 import { UserModel, findOne, createOne } from "../../DB/index.js";
 import { hash, compare } from "bcrypt";
@@ -22,6 +25,8 @@ import {
 import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
 import { ProviderEnum } from "../../common/enums/user.enum.js";
+import { otpKey, set, get } from "../../common/services/redis.service.js";
+
 export const signup = async (inputs) => {
   const { username, email, password, phone } = inputs;
   const checkUserExist = await findOne({
@@ -43,13 +48,57 @@ export const signup = async (inputs) => {
       phone: await generateEncryption(phone),
     },
   });
+  const code = await createNumberOtp();
+  await set({
+    key: otpKey(email),
+    value: await generateHash({
+      plaintext: `${code}`,
+    }),
+    ttl: 120,
+  });
+  await sendEmail({
+    to: email,
+    subject: "Confirmation Email",
+    html: emailTemplate({ code, title: "Confirm_Email" }),
+  });
   return { user };
 };
+
+export const confirmEmail = async (inputs) => {
+  const { email, otp } = inputs;
+  const account = await findOne({
+    model: UserModel,
+    filter: {
+      email,
+      confirmEmail: { $exists: false },
+      provider: ProviderEnum.System,
+    },
+  });
+  if (!account) {
+    return NotFoundException({ message: "fail to find matching account" });
+  }
+  const hashOtp = await get(otpKey(email));
+  if (!hashOtp) {
+    return NotFoundException({ message: "OTP expired" });
+  }
+  if (
+    !(await compareHash({
+      plaintext: otp,
+      cipherText: hashOtp,
+    }))
+  ) {
+    return ConflictException({ message: "Invalid OTP" });
+  }
+  account.confirmEmail = new Date();
+  await account.save();
+  return account;
+};
+
 export const login = async (inputs, issuer) => {
   const { email, password } = inputs;
   const user = await findOne({
     model: UserModel,
-    filter: { email , provider: ProviderEnum.System},
+    filter: { email, provider: ProviderEnum.System },
     options: { lean: false }, //to get the full mongoose document with its methods
   });
   if (!user) {

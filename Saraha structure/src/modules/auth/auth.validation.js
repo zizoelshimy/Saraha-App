@@ -17,5 +17,13 @@ export const signup = {
       lang: generalValidationFields.lang.required(),
     }).required(),
 };
+
+export const confirmEmail = {
+  body:joi.object().keys({
+      //to inherit the email and password validation from login
+      email: generalValidationFields.email.required(),
+      otp: generalValidationFields.otp.required(),
+    }).required(),
+};
     
   
