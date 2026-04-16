@@ -46,48 +46,45 @@ const clearOtpState = async (email, subject = EmailEnum.ConfirmEmail) => {
   ]);
 };
 
-const sendEmailOtp = async ({email, subject,title}={}) => {
-    const isBlocked = await ttl(blockOtpKey(email,subject));
+const sendEmailOtp = async ({ email, subject, title } = {}) => {
+  const isBlocked = await ttl(blockOtpKey(email, subject));
   if (isBlocked > 0) {
     return BadRequestException({
       message: `Sorry, you have been blocked from requesting new OTPs.while you are blocked. Please try again after ${isBlocked} seconds`,
     });
   }
 
-  const remainingOtpTTL = await ttl(otpKey(email,subject));
+  const remainingOtpTTL = await ttl(otpKey(email, subject));
   if (remainingOtpTTL > 0) {
     return BadRequestException({
       message: `Sorry, you cannot request a new OTP while the current OTP is still valid. Please try again after ${remainingOtpTTL} seconds`,
     });
   }
   // Check the number of resend attempts and block if it exceeds the limit
-  const maxtrial = Number((await get(maxAttemptsOtpKey(email,subject))) || 0);
+  const maxtrial = Number((await get(maxAttemptsOtpKey(email, subject))) || 0);
   if (maxtrial >= 3) {
-    await set({ key: blockOtpKey(email,subject), value: 1, ttl: 7 * 60 });
+    await set({ key: blockOtpKey(email, subject), value: 1, ttl: 7 * 60 });
     return BadRequestException({
       message: `Sorry, you have exceeded the maximum number of OTP resend attempts. Please try again after 7 minutes`,
     });
   }
   const code = await createNumberOtp();
   await set({
-    key: otpKey(email,subject),
+    key: otpKey(email, subject),
     value: await generateHash({
       plaintext: `${code}`,
     }),
     ttl: 120,
   });
-  emailEvent.emit("sendEmail",async()=>{
+  emailEvent.emit("sendEmail", async () => {
     await sendEmail({
-        to: email,
-        subject,
-        html: emailTemplate({ code, title }),
-      });
-      await incr(maxAttemptsOtpKey(email,subject));
-  })
-  
-}
-
-
+      to: email,
+      subject,
+      html: emailTemplate({ code, title }),
+    });
+    await incr(maxAttemptsOtpKey(email, subject));
+  });
+};
 
 export const signup = async (inputs) => {
   const { username, email, password, phone } = inputs;
@@ -110,8 +107,12 @@ export const signup = async (inputs) => {
       phone: await generateEncryption(phone),
     },
   });
-await clearOtpState(email, EmailEnum.ConfirmEmail);
-await sendEmailOtp({email,subject:EmailEnum.ConfirmEmail,title:"Verify your email for Saraha account"});
+  await clearOtpState(email, EmailEnum.ConfirmEmail);
+  await sendEmailOtp({
+    email,
+    subject: EmailEnum.ConfirmEmail,
+    title: "Verify your email for Saraha account",
+  });
   return { user };
 };
 
@@ -130,7 +131,7 @@ export const confirmEmail = async (inputs) => {
       message: "Account not found or already confirmed",
     });
   }
-  const hashOtp = await get(otpKey(email,EmailEnum.ConfirmEmail));
+  const hashOtp = await get(otpKey(email, EmailEnum.ConfirmEmail));
   if (!hashOtp) {
     return NotFoundException({ message: "OTP expired" });
   }
@@ -145,7 +146,7 @@ export const confirmEmail = async (inputs) => {
   account.confirmEmail = new Date();
   await account.save();
   await clearOtpState(email, EmailEnum.ConfirmEmail);
-  
+
   return account;
 };
 
@@ -165,7 +166,11 @@ export const resendConfirmEmail = async (inputs) => {
       message: "Account not found or already confirmed",
     });
   }
-  await sendEmailOtp({email,subject:EmailEnum.ConfirmEmail,title:"Verify your email for Saraha account"});
+  await sendEmailOtp({
+    email,
+    subject: EmailEnum.ConfirmEmail,
+    title: "Verify your email for Saraha account",
+  });
   return;
 };
 
