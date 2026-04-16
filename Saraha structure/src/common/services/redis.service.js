@@ -1,4 +1,5 @@
 import { redisCLIENT } from "../../DB/index.js";
+import { EmailEnum } from "../enums/email.enum.js";
 
 export const set=   async ({
     key,
@@ -107,13 +108,13 @@ export const baseRevokeTokenKey=  ({userId})=>{
 return `RevokedToken:${userId}`
 }
 
-export const otpKey=  (email,subject="Confirm_Email")=>{
+export const otpKey=  (email,subject=EmailEnum.ConfirmEmail)=>{
 return `OTP::User::${email}::${subject}`
 } 
 
-export const maxAttemptsOtpKey=  (email,subject="Confirm_Email")=>{
+export const maxAttemptsOtpKey=  (email,subject=EmailEnum.ConfirmEmail)=>{
 return `OTP::User::${email}::${subject}::MaxATrial`
 } 
-export const blockOtpKey=  (email,subject="Confirm_Email")=>{
+export const blockOtpKey=  (email,subject=EmailEnum.ConfirmEmail)=>{
 return `OTP::User::${email}::${subject}::Block`
 } 
